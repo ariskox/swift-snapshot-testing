@@ -24,6 +24,9 @@ final class ImageDiffBenchmarkTests: XCTestCase {
     let all = [UInt8](repeating: 0, count: 1000)
     XCTAssertEqual(countDifferingBytes(all, [UInt8](repeating: 0xFF, count: 1000)), 1000)
     XCTAssertEqual(countDifferingBytes(all, all), 0)
+    // Long enough to overflow 8-bit counters if they weren't flushed.
+    let long = [UInt8](repeating: 0, count: 64 * 255 * 3 + 5)
+    XCTAssertEqual(countDifferingBytes(long, long.map { $0 &+ 1 }), long.count)
   }
 
   func testCountDifferingBytesAtUnalignedOffsets() {
@@ -37,11 +40,17 @@ final class ImageDiffBenchmarkTests: XCTestCase {
             let length = 1000 - oldOffset - newOffset
             let expected = zip(old[oldOffset...].prefix(length), new[newOffset...].prefix(length))
               .filter { $0 != $1 }.count
+            let oldStart = old.baseAddress! + oldOffset
+            let newStart = new.baseAddress! + newOffset
             XCTAssertEqual(
-              countDifferingBytes(
-                old.baseAddress! + oldOffset, new.baseAddress! + newOffset, count: length),
+              countDifferingBytes(oldStart, newStart, count: length),
               expected,
               "offsets \(oldOffset), \(newOffset)"
+            )
+            XCTAssertEqual(
+              countDifferingBytesByWord(oldStart, newStart, count: length),
+              expected,
+              "word fallback, offsets \(oldOffset), \(newOffset)"
             )
           }
         }
