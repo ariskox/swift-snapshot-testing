@@ -26,6 +26,29 @@ final class ImageDiffBenchmarkTests: XCTestCase {
     XCTAssertEqual(countDifferingBytes(all, all), 0)
   }
 
+  func testCountDifferingBytesAtUnalignedOffsets() {
+    var generator = SystemRandomNumberGenerator()
+    let old = (0..<1024).map { _ in UInt8.random(in: 0...3, using: &generator) }
+    let new = (0..<1024).map { _ in UInt8.random(in: 0...3, using: &generator) }
+    old.withUnsafeBytes { old in
+      new.withUnsafeBytes { new in
+        for oldOffset in 0..<16 {
+          for newOffset in 0..<16 {
+            let length = 1000 - oldOffset - newOffset
+            let expected = zip(old[oldOffset...].prefix(length), new[newOffset...].prefix(length))
+              .filter { $0 != $1 }.count
+            XCTAssertEqual(
+              countDifferingBytes(
+                old.baseAddress! + oldOffset, new.baseAddress! + newOffset, count: length),
+              expected,
+              "offsets \(oldOffset), \(newOffset)"
+            )
+          }
+        }
+      }
+    }
+  }
+
   func testBenchmarkCountDifferingBytes() throws {
     try skipUnlessBenchmarking()
     let old = [UInt8](repeating: 0, count: Self.byteCount)
