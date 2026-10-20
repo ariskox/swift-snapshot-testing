@@ -30,7 +30,13 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "SnapshotTesting"
+      name: "SnapshotTesting",
+      dependencies: [
+        "SnapshotTestingByteDiff"
+      ]
+    ),
+    .target(
+      name: "SnapshotTestingByteDiff"
     ),
     .testTarget(
       name: "SnapshotTestingTests",
