@@ -1,4 +1,10 @@
-import SnapshotTestingByteDiff
+// NB: The C module is an implementation detail, so it mustn't appear in this module's interface
+//     when it's built for distribution.
+#if compiler(>=6.0)
+  internal import SnapshotTestingByteDiff
+#else
+  @_implementationOnly import SnapshotTestingByteDiff
+#endif
 
 /// Returns the number of bytes that differ between two equally sized byte buffers.
 func countDifferingBytes(_ old: [UInt8], _ new: [UInt8]) -> Int {
